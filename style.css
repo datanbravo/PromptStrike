@@ -434,6 +434,12 @@ body.dark-mode .mission-chip {
   transition: opacity 140ms ease, transform 140ms ease;
 }
 
+.topbar-actions .icon-btn[data-tooltip]::after {
+  bottom: auto;
+  top: calc(100% + 8px);
+  transform: translate(-50%, -4px);
+}
+
 .icon-btn[data-tooltip]::before,
 .icon-action[data-tooltip]::before {
   content: "";
@@ -452,6 +458,12 @@ body.dark-mode .mission-chip {
   transition: opacity 140ms ease;
 }
 
+.topbar-actions .icon-btn[data-tooltip]::before {
+  bottom: auto;
+  top: calc(100% + 3px);
+  transform: translateX(-50%) rotate(225deg);
+}
+
 .icon-btn[data-tooltip]:hover::after,
 .icon-btn[data-tooltip]:hover::before,
 .icon-btn[data-tooltip]:focus-visible::after,
@@ -467,6 +479,11 @@ body.dark-mode .mission-chip {
 .icon-btn[data-tooltip]:focus-visible::after,
 .icon-action[data-tooltip]:hover::after,
 .icon-action[data-tooltip]:focus-visible::after {
+  transform: translate(-50%, 0);
+}
+
+.topbar-actions .icon-btn[data-tooltip]:hover::after,
+.topbar-actions .icon-btn[data-tooltip]:focus-visible::after {
   transform: translate(-50%, 0);
 }
 
