@@ -659,7 +659,35 @@ function seedData() {
     }
   ];
 
-  data.notifications = [];
+  data.notifications = [
+    {
+      id: mkId(),
+      message: "New note: Please validate DAN 12.0 against the latest guardrail patch.",
+      time: "09:12",
+      read: false,
+      section: "templates",
+      targetType: "template",
+      targetId: tpl1
+    },
+    {
+      id: mkId(),
+      message: "New note: SQL Payloads v3 had higher bypass consistency in the last run.",
+      time: "08:48",
+      read: false,
+      section: "templates",
+      targetType: "template",
+      targetId: tpl2
+    },
+    {
+      id: mkId(),
+      message: "New note: Add a manual variant for Unicode obfuscation edge-cases.",
+      time: "Yesterday",
+      read: true,
+      section: "templates",
+      targetType: "template",
+      targetId: tpl6
+    }
+  ];
 
   appState.selectedProjectId = data.projects[0].id;
   appState.selectedTargetId = data.targets[0].id;
