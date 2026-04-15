@@ -145,6 +145,7 @@ const els = {
   reportFindingsBody: document.getElementById("reportFindingsBody"),
   reportActions: document.getElementById("reportActions"),
   backToReportsBtn: document.getElementById("backToReportsBtn"),
+  reportDetailDeleteBtn: document.getElementById("reportDetailDeleteBtn"),
 
   formModal: document.getElementById("formModal"),
   formModalTitle: document.getElementById("formModalTitle"),
@@ -826,10 +827,17 @@ function bindEvents() {
     renderReports();
   });
   if (els.generateReportBtn) {
-    els.generateReportBtn.addEventListener("click", generateNewReport);
+    els.generateReportBtn.addEventListener("click", openGenerateReportModal);
   }
   els.backToReportsBtn.addEventListener("click", () => openSection("reports"));
   els.reportExportBtn.addEventListener("click", () => openReportExportModal());
+  if (els.reportDetailDeleteBtn) {
+    els.reportDetailDeleteBtn.addEventListener("click", () => {
+      const report = getSelectedReport();
+      if (!report) return;
+      openConfirmModal("Delete Report", `Delete report "${report.title}"?`, "✓", () => deleteReport(report.id));
+    });
+  }
 
   els.closeFormModalBtn.addEventListener("click", closeFormModal);
   els.formModal.addEventListener("click", (event) => {
@@ -2018,7 +2026,7 @@ function renderReports() {
         <td class="mono">${escapeHtml(r.reportId)}</td>
         <td>${formatDateTime(r.generatedAt)}</td>
         <td><span class="pill pill--${classificationClass(r.classification)}">${escapeHtml(r.classification)}</span></td>
-        <td><div class="action-row">${iconAction("👁", "View Details", "report-view", r.id)}${iconAction("⤴", "Export Report", "report-export", r.id)}</div></td>
+        <td><div class="action-row">${iconAction("👁", "View Details", "report-view", r.id)}${iconAction("⤴", "Export Report", "report-export", r.id)}${iconAction("🗑", "Delete Report", "report-delete", r.id, "icon-action--danger")}</div></td>
       </tr>
     `
     )
@@ -2028,6 +2036,22 @@ function renderReports() {
   els.reportsTableBody.querySelectorAll("[data-report-export]").forEach((btn) => btn.addEventListener("click", () => {
     openReportExportModal(btn.dataset.reportExport);
   }));
+  els.reportsTableBody.querySelectorAll("[data-report-delete]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const report = data.reports.find((r) => r.id === btn.dataset.reportDelete);
+      if (!report) return;
+      openConfirmModal("Delete Report", `Delete report "${report.title}"?`, "✓", () => deleteReport(report.id));
+    });
+  });
+}
+
+function deleteReport(reportId) {
+  const report = data.reports.find((r) => r.id === reportId);
+  data.reports = data.reports.filter((r) => r.id !== reportId);
+  ensureSelections();
+  openSection("reports");
+  renderAll();
+  if (report) pushNotification(`Report deleted: ${report.title}`, "reports", "report", report.id);
 }
 
 function openReportDetail(reportId) {
@@ -2709,10 +2733,34 @@ function closeReportGenerateLoading() {
   }
 }
 
-function generateNewReport() {
-  if (appState.reportGenerating) return;
-  const baseProject = getSelectedProject() || data.projects[0];
-  if (!baseProject) return;
+function openGenerateReportModal() {
+  const selectedProject = getSelectedProject() || data.projects[0] || null;
+  const projectOptions = data.projects
+    .map((p) => `<option value="${p.id}" ${selectedProject?.id === p.id ? "selected" : ""}>${escapeHtml(p.name)}</option>`)
+    .join("");
+  els.formModalTitle.textContent = "Generate Report";
+  els.formModalForm.innerHTML = `
+    <div class="field"><label>Project <span class="required">*</span></label><select name="projectId" required>${projectOptions}</select></div>
+    <div class="action-row">
+      <button type="button" class="icon-action icon-action--subtle" id="cancelFormBtn" title="Cancel" aria-label="Cancel">×</button>
+      <button type="submit" class="icon-action icon-action--primary" title="Generate Report" aria-label="Generate Report">✓</button>
+    </div>
+  `;
+  openFormModal();
+  document.getElementById("cancelFormBtn").addEventListener("click", closeFormModal);
+  els.formModalForm.onsubmit = (event) => {
+    event.preventDefault();
+    const fd = new FormData(els.formModalForm);
+    const projectId = String(fd.get("projectId") || "");
+    const selected = data.projects.find((p) => p.id === projectId);
+    if (!selected) return;
+    closeFormModal();
+    generateNewReportForProject(selected);
+  };
+}
+
+function generateNewReportForProject(baseProject) {
+  if (appState.reportGenerating || !baseProject) return;
   appState.reportGenerating = true;
   if (els.generateReportBtn) {
     els.generateReportBtn.disabled = true;
@@ -2736,7 +2784,7 @@ function generateNewReport() {
     const reportSeq = String(data.reports.length + 1).padStart(3, "0");
     const newReport = {
       id: mkId(),
-      title: `${baseProject.name} Follow-Up Assessment`,
+      title: `${baseProject.name} Security Assessment`,
       projectId: baseProject.id,
       projectName: baseProject.name,
       reportId: `RPT-PS-${now.getFullYear()}-${reportSeq}`,
