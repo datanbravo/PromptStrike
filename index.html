@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptStrike</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="app-booting">
+  <div class="welcome-screen" id="welcomeScreen" aria-label="Welcome screen">
+    <div class="welcome-screen__content">
+      <img src="Welcome.png" alt="PromptStrike welcome logo" class="welcome-screen__logo" />
+      <h1>Welcome to PromptStrike</h1>
+    </div>
+  </div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-glow" aria-hidden="true"></div>
+      <div class="brand">
+        <div class="brand__mark">
+          <img src="PromptStrike Logo.png" alt="PromptStrike logo" class="brand__logo" />
+        </div>
+        <div>
+          <strong>PromptStrike</strong>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item nav-item--active" data-nav="projects"><span class="nav-icon">◻</span><span>Projects</span></button>
+        <button class="nav-item" data-nav="targets"><span class="nav-icon">◎</span><span>Targets</span></button>
+        <button class="nav-item" data-nav="attacks"><span class="nav-icon">◈</span><span>Attacks</span></button>
+        <button class="nav-item" data-nav="templates"><span class="nav-icon">▦</span><span>Templates</span></button>
+        <button class="nav-item" data-nav="reports"><span class="nav-icon">▤</span><span>Reports</span></button>
+      </nav>
+    </aside>
+
+    <main class="main-shell">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="search-wrap global-search">
+            <span aria-hidden="true">⌕</span>
+            <input id="globalSearch" type="search" placeholder="Search current section" />
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <div class="notif-wrap" id="notifWrap">
+            <button class="icon-btn" id="notificationToggle" title="Notifications" aria-label="Notifications">🔔</button>
+            <span class="notif-count" id="notificationCount" hidden>0</span>
+            <div class="notif-dropdown panel" id="notificationDropdown" hidden>
+              <div class="notif-head">
+                <strong>Notifications</strong>
+                <button class="text-btn" id="markAllReadBtn" type="button">Mark all as seen</button>
+              </div>
+              <div id="notificationList"></div>
+            </div>
+          </div>
+          <button class="icon-btn" id="toolConfigBtn" title="Tool Configuration" aria-label="Tool Configuration">⚙</button>
+          <button class="icon-btn" id="themeToggle" title="Theme" aria-label="Theme">☀</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section id="projectsView" class="view view--active">
+          <div class="page-header">
+            <div>
+              <h1>Projects</h1>
+              <p>Assessment overview and actions.</p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--primary" id="importProjectBtn" title="Import Project XML" aria-label="Import Project XML">⤵</button>
+              <button class="icon-action icon-action--primary" id="createProjectBtn" title="Create Project" aria-label="Create Project">＋</button>
+            </div>
+          </div>
+          <div class="kpi-grid" id="projectKpis"></div>
+          <div class="table-actions">
+            <div class="search-wrap">
+              <span aria-hidden="true">⌕</span>
+              <input id="projectSearch" type="search" placeholder="Search projects" />
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--subtle" id="exportSelectedProjectsBtn" title="Export Selected XML" aria-label="Export Selected XML">⤴</button>
+              <button class="icon-action icon-action--danger" id="deleteSelectedProjectsBtn" title="Delete Selected" aria-label="Delete Selected">🗑</button>
+            </div>
+          </div>
+          <div class="panel table-panel">
+            <table>
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="selectAllProjects" /></th>
+                  <th>Project</th>
+                  <th>Analyst</th>
+                  <th>State</th>
+                  <th>Progress</th>
+                  <th>Targets</th>
+                  <th>Attacks</th>
+                  <th>Upload Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="projectsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="projectDetailView" class="view">
+          <div class="page-header">
+            <div>
+              <h1 id="projectDetailTitle">Project Details</h1>
+              <p id="projectDetailDescription"></p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--subtle" id="backToProjectsBtn" title="Back to Projects" aria-label="Back to Projects">←</button>
+              <button class="icon-action icon-action--subtle" id="projectDetailEditBtn" title="Edit" aria-label="Edit">✎</button>
+              <button class="icon-action icon-action--subtle" id="projectDetailExportBtn" title="Export XML" aria-label="Export XML">⤴</button>
+              <button class="icon-action icon-action--danger" id="projectDetailDeleteBtn" title="Delete" aria-label="Delete">🗑</button>
+            </div>
+          </div>
+          <div class="kpi-grid kpi-grid--compact" id="projectDetailKpis"></div>
+          <div class="two-col">
+            <article class="panel sub-panel">
+              <h3>Linked Targets</h3>
+              <div id="projectDetailTargets"></div>
+            </article>
+            <article class="panel sub-panel">
+              <h3>Linked Attacks</h3>
+              <div id="projectDetailAttacks"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="targetsView" class="view">
+          <div class="page-header">
+            <div>
+              <h1>LLM Targets</h1>
+              <p>Endpoint status and access.</p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--primary" id="createTargetBtn" title="Add Target" aria-label="Add Target">＋</button>
+            </div>
+          </div>
+          <div class="status-card-grid" id="targetStatusOverview"></div>
+          <div class="table-actions">
+            <div class="search-wrap">
+              <span aria-hidden="true">⌕</span>
+              <input id="targetSearch" type="search" placeholder="Search targets" />
+            </div>
+            <div class="filter-row">
+              <label class="select-wrap">
+                <select id="targetVerificationFilter">
+                  <option value="all">All Verification</option>
+                  <option value="Verified">Verified</option>
+                  <option value="Unverified">Unverified</option>
+                  <option value="Unknown">Unknown</option>
+                </select>
+              </label>
+              <label class="select-wrap">
+                <select id="targetReachabilityFilter">
+                  <option value="all">All Reachability</option>
+                  <option value="Reachable">Reachable</option>
+                  <option value="Unreachable">Unreachable</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="panel table-panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Target</th>
+                  <th>Model</th>
+                  <th>Reachability</th>
+                  <th>Auth</th>
+                  <th>Last Verified</th>
+                  <th>Projects</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="targetsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="targetDetailView" class="view">
+          <div class="page-header">
+            <div>
+              <h1 id="targetDetailTitle">Target Details</h1>
+              <p id="targetDetailMeta"></p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--subtle" id="backToTargetsBtn" title="Back to Targets" aria-label="Back to Targets">←</button>
+              <button class="icon-action icon-action--subtle" id="targetDetailEditBtn" title="Edit" aria-label="Edit">✎</button>
+              <button class="icon-action icon-action--danger" id="targetDetailDeleteBtn" title="Delete" aria-label="Delete">🗑</button>
+            </div>
+          </div>
+          <div class="kpi-grid kpi-grid--compact" id="targetDetailKpis"></div>
+        </section>
+
+        <section id="attacksView" class="view">
+          <div class="page-header">
+            <div>
+              <h1>Attacks</h1>
+              <p>Run status and control.</p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--subtle" id="toggleAllAttacksBtn" title="Pause All" aria-label="Pause All">⏸</button>
+              <button class="icon-action icon-action--primary" id="createAttackBtn" title="Launch Attack" aria-label="Launch Attack">＋</button>
+            </div>
+          </div>
+          <div class="kpi-grid kpi-grid--section" id="attackOverviewKpis"></div>
+          <div class="table-actions">
+            <div class="search-wrap">
+              <span aria-hidden="true">⌕</span>
+              <input id="attackSearch" type="search" placeholder="Search attacks, templates, projects, targets" />
+            </div>
+            <div class="filter-row">
+              <label class="select-wrap">
+                <select id="attackStateFilter">
+                  <option value="all">All Status</option>
+                  <option value="running">Running</option>
+                  <option value="paused">Paused</option>
+                  <option value="queued">Queued</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                </select>
+              </label>
+              <label class="select-wrap">
+                <select id="attackRateLabelMode">
+                  <option value="exploit">Exploit Success Rate</option>
+                  <option value="bypass">Bypass Rate</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="panel table-panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Attack</th>
+                  <th>Template</th>
+                  <th>Project</th>
+                  <th>Target</th>
+                  <th>Tool</th>
+                  <th>Status</th>
+                  <th>Progress</th>
+                  <th>Exploit Success Rate</th>
+                  <th>Started</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="attacksTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="attackDetailView" class="view">
+          <div class="page-header">
+            <div>
+              <h1 id="attackDetailTitle">Attack Details</h1>
+              <p id="attackDetailMeta"></p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--subtle" id="backToAttacksBtn" title="Back to Attacks" aria-label="Back to Attacks">←</button>
+              <button class="icon-action icon-action--subtle" id="attackDetailEditBtn" title="Edit" aria-label="Edit">✎</button>
+              <button class="icon-action icon-action--danger" id="attackDetailDeleteBtn" title="Delete" aria-label="Delete">🗑</button>
+            </div>
+          </div>
+          <div id="attackSessionMeta" class="session-meta panel"></div>
+          <div class="kpi-grid kpi-grid--compact" id="attackDetailKpis"></div>
+          <div class="two-col">
+            <article class="panel sub-panel">
+              <h3>Prompt/Response Evidence</h3>
+              <div id="attackEvidenceList"></div>
+            </article>
+            <article class="panel sub-panel">
+              <h3>Attack Logs</h3>
+              <div id="attackLogList"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="templatesView" class="view">
+          <div class="page-header">
+            <div>
+              <h1>Templates</h1>
+              <p>Reusable test assets.</p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--primary" id="createTemplateBtn" title="Create Template" aria-label="Create Template">＋</button>
+            </div>
+          </div>
+          <div class="kpi-grid kpi-grid--section" id="templateOverviewKpis"></div>
+          <div class="table-actions">
+            <div class="search-wrap">
+              <span aria-hidden="true">⌕</span>
+              <input id="templateSearch" type="search" placeholder="Search templates by name, description, tooling" />
+            </div>
+            <label class="select-wrap">
+              <select id="templateCategoryFilter">
+                <option value="all">All Categories</option>
+                <option value="Jailbreak">Jailbreak</option>
+                <option value="Injection">Injection</option>
+                <option value="Leakage">Leakage</option>
+                <option value="Stress">Stress</option>
+              </select>
+            </label>
+          </div>
+          <div class="panel table-panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Template</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Variables</th>
+                  <th>Variants</th>
+                  <th>Exploit Success Rate</th>
+                  <th>Supported Tools</th>
+                  <th>Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="templatesTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="templateDetailView" class="view">
+          <div class="page-header">
+            <div>
+              <h1 id="templateDetailTitle">Template Details</h1>
+              <p id="templateDetailMeta"></p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--subtle" id="backToTemplatesBtn" title="Back to Templates" aria-label="Back to Templates">←</button>
+              <button class="icon-action icon-action--subtle" id="templateDetailRunBtn" title="Run Template" aria-label="Run Template">▶</button>
+              <button class="icon-action icon-action--subtle" id="templateDetailEditBtn" title="Edit" aria-label="Edit">✎</button>
+              <button class="icon-action icon-action--danger" id="templateDetailDeleteBtn" title="Delete" aria-label="Delete">🗑</button>
+            </div>
+          </div>
+          <div class="two-col">
+            <article class="panel sub-panel">
+              <h3>Prompt Template</h3>
+              <pre id="templatePromptBlock"></pre>
+            </article>
+            <article class="panel sub-panel">
+              <h3>Usage Statistics</h3>
+              <div id="templateUsage"></div>
+            </article>
+            <article class="panel sub-panel">
+              <h3>Variables</h3>
+              <div id="templateVariables"></div>
+            </article>
+            <article class="panel sub-panel">
+              <h3>Variants</h3>
+              <div id="templateExecutionSets"></div>
+            </article>
+            <article class="panel sub-panel">
+              <h3>Supported Tools</h3>
+              <div id="templateTooling"></div>
+            </article>
+            <article class="panel sub-panel">
+              <h3>Notes</h3>
+              <form id="templateNoteForm" class="inline-form">
+                <label for="templateNoteInput">Add Note</label>
+                <textarea id="templateNoteInput" required placeholder="Add note, observation, or review comment"></textarea>
+                <div class="action-row">
+                  <button class="icon-action icon-action--primary" type="submit" title="Add Note" aria-label="Add Note">＋</button>
+                </div>
+              </form>
+              <div id="templateNotes" class="notes-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="reportsView" class="view">
+          <div class="page-header">
+            <div>
+              <h1>Reports</h1>
+              <p>Assessment reports.</p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--primary" id="generateReportBtn" title="Generate Report" aria-label="Generate Report">＋</button>
+            </div>
+          </div>
+          <div class="kpi-grid" id="reportOverviewKpis"></div>
+          <div class="table-actions">
+            <div class="search-wrap">
+              <span aria-hidden="true">⌕</span>
+              <input id="reportSearch" type="search" placeholder="Search reports by title, project, or ID" />
+            </div>
+            <label class="select-wrap">
+              <select id="reportClassificationFilter">
+                <option value="all">All Classification</option>
+                <option value="Confidential">Confidential</option>
+                <option value="Internal">Internal</option>
+                <option value="Summary">Summary</option>
+              </select>
+            </label>
+          </div>
+          <div class="panel table-panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Report Title</th>
+                  <th>Project</th>
+                  <th>Report ID</th>
+                  <th>Generated Date</th>
+                  <th>Classification</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="reportsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="reportDetailView" class="view">
+          <div class="page-header">
+            <div>
+              <h1 id="reportDetailTitle">Report Details</h1>
+              <p id="reportDetailMeta"></p>
+            </div>
+            <div class="action-row">
+              <button class="icon-action icon-action--subtle" id="backToReportsBtn" title="Back to Reports" aria-label="Back to Reports">←</button>
+              <button class="icon-action icon-action--primary" id="reportExportBtn" title="Export Report" aria-label="Export Report">⤴</button>
+            </div>
+          </div>
+          <div class="report-layout">
+            <div class="report-top-row">
+              <article class="panel sub-panel report-summary-panel">
+                <h3>Executive Summary</h3>
+                <p id="reportExecutiveSummary"></p>
+              </article>
+              <article class="panel sub-panel report-kpi-panel">
+                <h3>Key Metrics</h3>
+                <div id="reportMetricKpis" class="kpi-grid kpi-grid--compact"></div>
+              </article>
+            </div>
+
+            <div class="report-middle-row">
+              <article class="panel sub-panel report-visual-panel">
+                <h3>Visual Analysis</h3>
+                <div id="reportRiskOverview" class="risk-overview"></div>
+                <div class="report-visual-main">
+                  <div class="report-donut-panel">
+                    <p class="chart-kicker">Risk Distribution</p>
+                    <div id="reportPieChart" class="pie-chart" aria-hidden="true"></div>
+                    <p id="reportDonutSummary" class="muted">Select severity to focus.</p>
+                  </div>
+                  <div class="report-legend-panel">
+                    <p class="chart-kicker">Severity Breakdown</p>
+                    <div id="reportSeverityLegend"></div>
+                  </div>
+                </div>
+                <div class="report-trend-wrap">
+                  <svg id="reportLineChart" class="line-chart" viewBox="0 0 760 260" role="img" aria-label="Trend chart"></svg>
+                  <div id="reportTrendTooltip" class="chart-tooltip" hidden></div>
+                </div>
+                <p id="reportTrendValue" class="muted">Select a checkpoint for details.</p>
+              </article>
+
+              <article class="panel sub-panel report-actions-panel">
+                <h3>Recommended Actions</h3>
+                <ol id="reportActions"></ol>
+              </article>
+            </div>
+
+            <article class="panel sub-panel report-findings">
+              <h3>Detailed Findings</h3>
+              <div class="table-panel">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Severity</th>
+                      <th>Type</th>
+                      <th>Target</th>
+                      <th>Source Trace</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportFindingsBody"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="formModal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="formModalTitle">Form</h2>
+        <button class="icon-action icon-action--subtle" id="closeFormModalBtn" type="button" title="Close" aria-label="Close">×</button>
+      </div>
+      <form class="modal-body" id="formModalForm"></form>
+    </div>
+  </div>
+
+  <div class="modal" id="confirmModal" hidden>
+    <div class="modal-card modal-card--compact">
+      <div class="modal-head">
+        <h2 id="confirmTitle">Confirm</h2>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage"></p>
+        <div class="action-row">
+          <button class="icon-action icon-action--subtle" id="confirmCancelBtn" type="button" title="Cancel" aria-label="Cancel">×</button>
+          <button class="icon-action icon-action--danger" id="confirmAcceptBtn" type="button" title="Confirm" aria-label="Confirm">✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="reportExportModal" hidden>
+    <div class="modal-card modal-card--compact">
+      <div class="modal-head">
+        <h2>Export Report</h2>
+      </div>
+      <div class="modal-body">
+        <p>Choose format.</p>
+        <div class="action-row">
+          <button class="icon-action icon-action--subtle" id="closeReportExportModalBtn" type="button" title="Cancel" aria-label="Cancel">×</button>
+          <button class="icon-action icon-action--subtle" id="reportExportAsPdfBtn" type="button" title="Export as PDF" aria-label="Export as PDF">🖨</button>
+          <button class="icon-action icon-action--primary" id="reportExportAsHtmlBtn" type="button" title="Export as HTML" aria-label="Export as HTML">⤴</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="reportGenerateLoading" hidden>
+    <div class="modal-card modal-card--compact loading-card">
+      <div class="modal-body loading-body">
+        <video
+          id="reportGenerateVideo"
+          class="loading-video"
+          src="PrompStrike Loading Icon.mp4"
+          autoplay
+          muted
+          loop
+          playsinline
+        ></video>
+        <p>Generating report...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
