@@ -2237,4 +2237,15 @@ body.dark-mode #reportsView .table-panel {
   .pie-chart {
     width: min(100%, 280px);
   }
+
+  .export-option {
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  border-radius: 12px;
+  min-width: 60px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  }
 }
