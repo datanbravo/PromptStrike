@@ -53,7 +53,6 @@
               <div id="notificationList"></div>
             </div>
           </div>
-          <button class="icon-btn" id="toolConfigBtn" data-tooltip="Tool Configuration" aria-label="Tool Configuration">⚙️</button>
           <button class="icon-btn" id="themeToggle" data-tooltip="Theme" aria-label="Theme">☀️</button>
         </div>
       </header>
@@ -66,8 +65,8 @@
               <p>Assessment overview and actions.</p>
             </div>
             <div class="action-row">
-              <button class="icon-action icon-action--primary" id="importProjectBtn" title="Import Project XML" aria-label="Import Project XML">⤵</button>
-              <button class="icon-action icon-action--primary" id="createProjectBtn" title="Create Project" aria-label="Create Project">＋</button>
+              <button class="icon-action icon-action--primary action-btn-text" id="importProjectBtn" title="Import Project XML" aria-label="Import Project XML">Import Project</button>
+              <button class="icon-action icon-action--primary action-btn-text" id="createProjectBtn" title="Create Project" aria-label="Create Project">New Project</button>
             </div>
           </div>
           <div class="kpi-grid" id="projectKpis"></div>
@@ -114,17 +113,98 @@
               <button class="icon-action icon-action--danger" id="projectDetailDeleteBtn" title="Delete" aria-label="Delete">🗑</button>
             </div>
           </div>
-          <div class="kpi-grid kpi-grid--compact" id="projectDetailKpis"></div>
-          <div class="two-col">
-            <article class="panel sub-panel">
-              <h3>Linked Targets</h3>
-              <div id="projectDetailTargets"></div>
-            </article>
-            <article class="panel sub-panel">
-              <h3>Linked Attacks</h3>
-              <div id="projectDetailAttacks"></div>
-            </article>
+          <div class="detail-tab-strip" id="projectDetailTabs" role="tablist" aria-label="Project detail sections">
+            <button class="detail-tab is-active" id="projectDetailsTabBtn" type="button" role="tab" aria-selected="true" aria-controls="projectDetailsPanel" data-project-tab="details">Details</button>
+            <button class="detail-tab" id="projectTemplatesTabBtn" type="button" role="tab" aria-selected="false" aria-controls="projectTemplatesPanel" data-project-tab="templates">Templates</button>
+            <button class="detail-tab" id="projectNotesTabBtn" type="button" role="tab" aria-selected="false" aria-controls="projectNotesPanel" data-project-tab="notes">Notes</button>
           </div>
+
+          <section class="project-tab-panel" id="projectDetailsPanel" role="tabpanel" aria-labelledby="projectDetailsTabBtn" data-project-panel="details">
+            <div class="kpi-grid kpi-grid--compact" id="projectDetailKpis"></div>
+            <div class="project-detail-grid">
+              <article class="panel sub-panel project-overview-card">
+                <div class="panel-heading">
+                  <div>
+                    <h3>Overview</h3>
+                    <p class="muted">Assessment metadata and working context.</p>
+                  </div>
+                </div>
+                <div id="projectDetailOverview" class="definition-grid"></div>
+                <div id="projectDetailConfig" class="project-config-block"></div>
+              </article>
+              <article class="panel sub-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>Linked Targets</h3>
+                    <p class="muted">Targets currently attached to this assessment.</p>
+                  </div>
+                </div>
+                <div id="projectDetailTargets"></div>
+              </article>
+              <article class="panel sub-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>Linked Attacks</h3>
+                    <p class="muted">Recent attack runs and their current state.</p>
+                  </div>
+                </div>
+                <div id="projectDetailAttacks"></div>
+              </article>
+              <article class="panel sub-panel">
+                <div class="panel-heading panel-heading--between">
+                  <div>
+                    <h3>Project Reports</h3>
+                    <p class="muted">Generate project-wide or attack-specific reports from this assessment.</p>
+                  </div>
+                  <button class="icon-action icon-action--primary action-btn-text" id="projectGenerateReportBtn" type="button" title="Generate Project Report" aria-label="Generate Project Report">Generate Project Report</button>
+                </div>
+                <div id="projectDetailReports" class="project-report-list"></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="project-tab-panel" id="projectTemplatesPanel" role="tabpanel" aria-labelledby="projectTemplatesTabBtn" data-project-panel="templates" hidden>
+            <article class="panel sub-panel">
+              <div class="panel-heading panel-heading--between">
+                <div>
+                  <h3>Prompt Templates</h3>
+                  <p class="muted">Manage attack prompt templates with injection variants.</p>
+                </div>
+                <button class="icon-action icon-action--primary" id="projectTemplateAddBtn" type="button" title="Add Template" aria-label="Add Template">＋</button>
+              </div>
+              <div id="projectTemplateList" class="project-template-list"></div>
+            </article>
+          </section>
+
+          <section class="project-tab-panel" id="projectNotesPanel" role="tabpanel" aria-labelledby="projectNotesTabBtn" data-project-panel="notes" hidden>
+            <div class="two-col project-notes-layout">
+              <article class="panel sub-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>Project Notes</h3>
+                    <p class="muted">Capture general assessment notes separately from template annotations.</p>
+                  </div>
+                </div>
+                <form id="projectNoteForm" class="inline-form">
+                  <label for="projectNoteInput">Add Project Note</label>
+                  <textarea id="projectNoteInput" required placeholder="Add a project note with at least ten words for analyst context"></textarea>
+                  <p id="projectNoteMessage" class="field-message" aria-live="polite"></p>
+                  <div class="action-row">
+                    <button class="icon-action icon-action--primary" type="submit" title="Add Project Note" aria-label="Add Project Note">＋</button>
+                  </div>
+                </form>
+              </article>
+              <article class="panel sub-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>Recent Notes</h3>
+                    <p class="muted">Analyst notes include author attribution and timestamps.</p>
+                  </div>
+                </div>
+                <div id="projectNotes" class="notes-list"></div>
+              </article>
+            </div>
+          </section>
         </section>
 
         <section id="targetsView" class="view">
@@ -145,18 +225,11 @@
             </div>
             <div class="filter-row">
               <label class="select-wrap">
-                <select id="targetVerificationFilter">
-                  <option value="all">All Verification</option>
-                  <option value="Verified">Verified</option>
-                  <option value="Unverified">Unverified</option>
-                  <option value="Unknown">Unknown</option>
-                </select>
-              </label>
-              <label class="select-wrap">
                 <select id="targetReachabilityFilter">
                   <option value="all">All Reachability</option>
                   <option value="Reachable">Reachable</option>
                   <option value="Unreachable">Unreachable</option>
+                  <option value="Pending Connectivity">Pending Connectivity</option>
                 </select>
               </label>
             </div>
@@ -169,7 +242,7 @@
                   <th>Model</th>
                   <th>Reachability</th>
                   <th>Auth</th>
-                  <th>Last Verified</th>
+                  <th>Last Connectivity Verification</th>
                   <th>Projects</th>
                   <th>Actions</th>
                 </tr>
@@ -219,6 +292,7 @@
                   <option value="paused">Paused</option>
                   <option value="queued">Queued</option>
                   <option value="completed">Completed</option>
+                  <option value="interrupted">Interrupted</option>
                   <option value="failed">Failed</option>
                 </select>
               </label>
@@ -265,14 +339,45 @@
           </div>
           <div id="attackSessionMeta" class="session-meta panel"></div>
           <div class="kpi-grid kpi-grid--compact" id="attackDetailKpis"></div>
-          <div class="two-col">
-            <article class="panel sub-panel">
-              <h3>Prompt/Response Evidence</h3>
-              <div id="attackEvidenceList"></div>
+          <div class="attack-workspace-grid">
+            <article class="panel sub-panel attack-pane attack-pane--workspace">
+              <div class="panel-heading panel-heading--between">
+                <div>
+                  <h3>Attack Workspace</h3>
+                  <p class="muted">Operator controls, prompt activity, current-attack criticality drivers, and selected tool settings.</p>
+                </div>
+                <div class="action-row attack-inline-actions" id="attackWorkspaceControls"></div>
+              </div>
+              <div id="attackWorkspaceSummary" class="section-stack"></div>
+              <div id="attackWorkspaceCriticality" class="section-stack"></div>
+              <div id="attackWorkspacePromptForm"></div>
+              <div class="section-stack">
+                <div class="panel-heading">
+                  <div>
+                    <h3>Prompt Activity</h3>
+                    <p class="muted">Queued prompts, manual prompt submissions, and saved prompt actions.</p>
+                  </div>
+                </div>
+                <div id="attackPromptActivity" class="attack-stream-list"></div>
+              </div>
             </article>
-            <article class="panel sub-panel">
-              <h3>Attack Logs</h3>
-              <div id="attackLogList"></div>
+            <article class="panel sub-panel attack-pane attack-pane--results">
+              <div class="panel-heading">
+                <div>
+                  <h3>Real-Time Results &amp; Logs</h3>
+                  <p class="muted">Streaming tool execution events, findings, and result summaries.</p>
+                </div>
+              </div>
+              <div class="section-stack">
+                <div>
+                  <h4 class="attack-subhead">Results Stream</h4>
+                  <div id="attackResultsStream" class="attack-stream-list"></div>
+                </div>
+                <div>
+                  <h4 class="attack-subhead">Live Log Stream</h4>
+                  <div id="attackLogStream" class="attack-stream-list"></div>
+                </div>
+              </div>
             </article>
           </div>
         </section>
@@ -281,7 +386,7 @@
           <div class="page-header">
             <div>
               <h1>Templates</h1>
-              <p>Reusable test assets.</p>
+              <p>Project-owned prompt templates and injection variants.</p>
             </div>
             <div class="action-row">
               <button class="icon-action icon-action--primary" id="createTemplateBtn" title="Create Template" aria-label="Create Template">＋</button>
@@ -291,29 +396,38 @@
           <div class="table-actions">
             <div class="search-wrap">
               <span aria-hidden="true">⌕</span>
-              <input id="templateSearch" type="search" placeholder="Search templates by name, description, tooling" />
+              <input id="templateSearch" type="search" placeholder="Search templates by name, description, project, or tool" />
             </div>
-            <label class="select-wrap">
-              <select id="templateCategoryFilter">
-                <option value="all">All Categories</option>
-                <option value="Jailbreak">Jailbreak</option>
-                <option value="Injection">Injection</option>
-                <option value="Leakage">Leakage</option>
-                <option value="Stress">Stress</option>
-              </select>
-            </label>
+            <div class="filter-row">
+              <label class="select-wrap">
+                <select id="templateCategoryFilter">
+                  <option value="all">All Categories</option>
+                  <option value="Jailbreak">Jailbreak</option>
+                  <option value="Injection">Injection</option>
+                  <option value="Leakage">Leakage</option>
+                  <option value="Stress">Stress</option>
+                </select>
+              </label>
+              <label class="select-wrap">
+                <select id="templateTypeFilter">
+                  <option value="all">All Types</option>
+                  <option value="manual">Manual / Custom</option>
+                  <option value="tool-specific">Tool-Specific</option>
+                </select>
+              </label>
+            </div>
           </div>
           <div class="panel table-panel">
             <table>
               <thead>
                 <tr>
                   <th>Template</th>
+                  <th>Project</th>
                   <th>Category</th>
-                  <th>Description</th>
-                  <th>Variables</th>
-                  <th>Variants</th>
+                  <th>Type</th>
+                  <th>Injection Variants</th>
                   <th>Exploit Success Rate</th>
-                  <th>Supported Tools</th>
+                  <th>Tool</th>
                   <th>Updated</th>
                   <th>Actions</th>
                 </tr>
@@ -336,6 +450,7 @@
               <button class="icon-action icon-action--danger" id="templateDetailDeleteBtn" title="Delete" aria-label="Delete">🗑</button>
             </div>
           </div>
+          <div id="templateDetailWarning" class="banner banner--warning" hidden></div>
           <div class="two-col">
             <article class="panel sub-panel">
               <h3>Prompt Template</h3>
@@ -346,22 +461,27 @@
               <div id="templateUsage"></div>
             </article>
             <article class="panel sub-panel">
-              <h3>Variables</h3>
+              <h3>Parsed Placeholders</h3>
               <div id="templateVariables"></div>
             </article>
             <article class="panel sub-panel">
-              <h3>Variants</h3>
+              <h3>Injection Variants</h3>
               <div id="templateExecutionSets"></div>
             </article>
             <article class="panel sub-panel">
-              <h3>Supported Tools</h3>
+              <h3>Tooling, Flags, and Custom Data</h3>
               <div id="templateTooling"></div>
+            </article>
+            <article class="panel sub-panel">
+              <h3>Rendered Preview</h3>
+              <div id="templatePreviewList"></div>
             </article>
             <article class="panel sub-panel">
               <h3>Notes</h3>
               <form id="templateNoteForm" class="inline-form">
                 <label for="templateNoteInput">Add Note</label>
-                <textarea id="templateNoteInput" required placeholder="Add note, observation, or review comment"></textarea>
+                <textarea id="templateNoteInput" required placeholder="Add note, observation, or review comment with at least ten words"></textarea>
+                <p id="templateNoteMessage" class="field-message" aria-live="polite"></p>
                 <div class="action-row">
                   <button class="icon-action icon-action--primary" type="submit" title="Add Note" aria-label="Add Note">＋</button>
                 </div>
@@ -375,10 +495,7 @@
           <div class="page-header">
             <div>
               <h1>Reports</h1>
-              <p>Assessment reports.</p>
-            </div>
-            <div class="action-row">
-              <button class="icon-action icon-action--primary" id="generateReportBtn" title="Generate Report" aria-label="Generate Report">＋</button>
+              <p>Project-scoped report library and attack-specific reporting.</p>
             </div>
           </div>
           <div class="kpi-grid" id="reportOverviewKpis"></div>
@@ -396,21 +513,7 @@
               </select>
             </label>
           </div>
-          <div class="panel table-panel">
-            <table>
-              <thead>
-                <tr>
-                  <th>Report Title</th>
-                  <th>Project</th>
-                  <th>Report ID</th>
-                  <th>Generated Date</th>
-                  <th>Classification</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="reportsTableBody"></tbody>
-            </table>
-          </div>
+          <div id="reportsByProject" class="report-groups"></div>
         </section>
 
         <section id="reportDetailView" class="view">
@@ -441,14 +544,15 @@
               <article class="panel sub-panel report-visual-panel">
                 <h3>Visual Analysis</h3>
                 <div id="reportRiskOverview" class="risk-overview"></div>
+                <article class="report-insight-card" id="reportAnalysisInsight"></article>
                 <div class="report-visual-main">
                   <div class="report-donut-panel">
-                    <p class="chart-kicker">Risk Distribution</p>
+                    <p class="chart-kicker">Outcome / Tool Severity Distribution</p>
                     <div id="reportPieChart" class="pie-chart" aria-hidden="true"></div>
-                    <p id="reportDonutSummary" class="muted">Select severity to focus.</p>
+                    <p id="reportDonutSummary" class="muted">Select a category to focus.</p>
                   </div>
                   <div class="report-legend-panel">
-                    <p class="chart-kicker">Severity Breakdown</p>
+                    <p class="chart-kicker">Outcome / Tool Severity Breakdown</p>
                     <div id="reportSeverityLegend"></div>
                   </div>
                 </div>
@@ -465,13 +569,20 @@
               </article>
             </div>
 
+            <article class="panel sub-panel report-model-panel">
+              <h3>LLM Assessment Sections</h3>
+              <p class="muted">Each assessed LLM gets its own graph section with project-scoped results.</p>
+              <div id="reportModelBreakdown" class="report-model-breakdown"></div>
+              <div id="reportModelSections" class="report-model-sections"></div>
+            </article>
+
             <article class="panel sub-panel report-findings">
               <h3>Detailed Findings</h3>
               <div class="table-panel">
                 <table>
                   <thead>
                     <tr>
-                      <th>Severity</th>
+                      <th>Tool Severity / Outcome</th>
                       <th>Type</th>
                       <th>Target</th>
                       <th>Source Trace</th>
@@ -549,4 +660,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
