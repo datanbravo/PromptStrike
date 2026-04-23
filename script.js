@@ -1180,7 +1180,7 @@ function renderProjects() {
     .map((p) => {
       const checked = appState.selectedProjectIds.has(p.id) ? "checked" : "";
       return `
-        <tr>
+        <tr class="clickable-row" data-project-row="${p.id}">
           <td><input type="checkbox" data-project-select="${p.id}" ${checked} /></td>
           <td>
             <button class="text-btn" data-project-view="${p.id}" title="View Details">${escapeHtml(p.name)}</button>
@@ -1190,7 +1190,7 @@ function renderProjects() {
           <td><span class="chip">${escapeHtml(p.state)}</span></td>
           <td>
             <button class="progress-spec-trigger" type="button" data-project-progress-spec="${p.id}" aria-label="How project progress is defined">
-              <span class="progress-track"><span class="progress-fill" style="width:${p.progress}%"></span></span>
+              ${progressFillMarkup(p.progress)}
               <span class="muted">${p.progress}%</span>
             </button>
           </td>
@@ -1199,7 +1199,6 @@ function renderProjects() {
           <td>${formatDate(p.uploadDate)}</td>
           <td>
             <div class="action-row">
-              ${iconAction("👁", "View Details", "project-view", p.id)}
               ${iconAction("✎", "Edit", "project-edit", p.id)}
               ${iconAction("⤴", "Export XML", "project-export", p.id)}
               ${iconAction("🗑", "Delete", "project-delete", p.id, "icon-action--danger")}
@@ -1246,6 +1245,7 @@ function wireProjectActions(rows) {
       syncSelectAllProjects(rows);
     });
   });
+  attachRowOpenHandlers(els.projectsTableBody, "[data-project-row]", (row) => openProjectDetail(row.dataset.projectRow));
 }
 
 function openProjectDetail(projectId, tab = appState.projectDetailTab || "details") {
@@ -1526,14 +1526,14 @@ function renderTargets() {
   els.targetsTableBody.innerHTML = rows
     .map(
       (t) => `
-    <tr>
+    <tr class="clickable-row" data-target-row="${t.id}">
       <td><button class="text-btn" data-target-view="${t.id}" title="View Details">${escapeHtml(t.name)}</button><div class="muted mono">${escapeHtml(compactEndpoint(t.endpoint))}</div></td>
       <td>${escapeHtml(compactProviderModelLabel(t))}</td>
       <td><span class="chip">${escapeHtml(t.reachability)}</span></td>
       <td><span class="chip">${escapeHtml(t.auth || "Optional")}</span></td>
       <td>${formatDate(t.lastVerified)}</td>
       <td>${t.projectIds.length}</td>
-      <td><div class="action-row">${iconAction("👁", "View Details", "target-view", t.id)}${iconAction("▶", "Run Attack", "target-run", t.id)}${iconAction("✎", "Edit", "target-edit", t.id)}${iconAction("🗑", "Delete", "target-delete", t.id, "icon-action--danger")}</div></td>
+      <td><div class="action-row">${iconAction("▶", "Run Attack", "target-run", t.id)}${iconAction("✎", "Edit", "target-edit", t.id)}${iconAction("🗑", "Delete", "target-delete", t.id, "icon-action--danger")}</div></td>
     </tr>
   `
     )
@@ -1559,6 +1559,7 @@ function renderTargets() {
       openConfirmModal("Delete Target", `Delete target "${target.name}"?`, "✓", () => deleteTarget(target.id));
     });
   });
+  attachRowOpenHandlers(els.targetsTableBody, "[data-target-row]", (row) => openTargetDetail(row.dataset.targetRow));
 }
 
 function renderTargetOverview() {
@@ -1665,8 +1666,9 @@ function renderAttacks() {
     kpiCard("Paused Queue", `${pausedAttacks}`),
     kpiCard("Interrupted", `${interruptedAttacks}`),
     kpiCard("Failed Runs", `${failedAttacks}`),
-    kpiCard("Avg Exploit Rate", `${avgExploitRate}%`)
+    interactiveKpiCard("Avg Exploit Rate", `${avgExploitRate}%`, "View calculation", "attack-overview-rate", "overview")
   ].join("");
+  els.attackOverviewKpis.querySelector('[data-attack-overview-rate]')?.addEventListener("click", () => openAttackOverviewRateModal());
 
   const rows = data.attacks.filter((attack) => {
     const searchable = `${attack.name} ${attack.templateName || ""} ${attack.projectName || ""} ${attack.targetName || ""} ${formatAttackToolLabel(attack)} ${attack.status}`.toLowerCase();
@@ -1684,7 +1686,7 @@ function renderAttacks() {
     const rate = appState.attackRateLabelMode === "bypass" ? bypassRate(attack) : attack.exploitRate;
     const rateLabel = appState.attackRateLabelMode === "bypass" ? "Bypass Rate" : "Exploit Success Rate";
     return `
-      <tr>
+      <tr class="clickable-row" data-attack-row="${attack.id}">
         <td><button class="text-btn" data-attack-view="${attack.id}" title="View Details">${escapeHtml(attack.name)}</button></td>
         <td>${escapeHtml(attack.templateName || "Direct Prompt")}</td>
         <td>${escapeHtml(attack.projectName || getProjectName(attack.projectId))}</td>
@@ -1693,13 +1695,13 @@ function renderAttacks() {
         <td><span class="pill pill--${attack.status}">${escapeHtml(attack.status)}</span></td>
         <td>
           <button class="progress-spec-trigger" type="button" data-attack-progress-spec="${attack.id}" aria-label="How attack progress is defined">
-            <span class="progress-track"><span class="progress-fill" style="width:${attack.progress}%"></span></span>
+            ${progressFillMarkup(attack.progress)}
             <span class="muted">${attack.progress}%</span>
           </button>
         </td>
         <td><button class="success-rate ${successRateClass(rate)}" type="button" title="${rateLabel}" data-attack-success-rate="${attack.id}">${rate}%</button><div class="muted mono">${attack.successCount}/${attack.totalCount}</div></td>
         <td>${escapeHtml(formatDateTime(attack.startedAt || attack.started || "Not started"))}</td>
-        <td><div class="action-row">${iconAction("👁", "View Details", "attack-view", attack.id)}${iconAction("✎", "Edit", "attack-edit", attack.id)}${iconAction("↻", "Rerun", "attack-rerun", attack.id)}${iconAction(attack.status === "running" ? "⏸" : "▶", attack.status === "running" ? "Pause" : "Run/Resume", "attack-toggle", attack.id)}${iconAction("🗑", "Delete", "attack-delete", attack.id, "icon-action--danger")}</div></td>
+        <td><div class="action-row">${iconAction("✎", "Edit", "attack-edit", attack.id)}${iconAction("↻", "Rerun", "attack-rerun", attack.id)}${iconAction(attack.status === "running" ? "⏸" : "▶", attack.status === "running" ? "Pause" : "Run/Resume", "attack-toggle", attack.id)}${iconAction("🗑", "Delete", "attack-delete", attack.id, "icon-action--danger")}</div></td>
       </tr>
     `;
   }).join("");
@@ -1732,6 +1734,7 @@ function renderAttacks() {
       openConfirmModal("Delete Attack", `Delete attack "${attack.name}"?`, "✓", () => deleteAttack(attack.id));
     });
   });
+  attachRowOpenHandlers(els.attacksTableBody, "[data-attack-row]", (row) => openAttackDetail(row.dataset.attackRow));
   syncPauseAllButton();
 }
 
@@ -2432,9 +2435,10 @@ function renderTemplates() {
   els.templateOverviewKpis.innerHTML = [
     kpiCard("Library Size", `${totalTemplates}`),
     kpiCard("Top Performer", topTemplate ? `${topTemplate.name}` : "N/A"),
-    kpiCard("Avg Exploit Rate", `${avgTemplateRate}%`),
+    interactiveKpiCard("Avg Exploit Rate", `${avgTemplateRate}%`, "View calculation", "template-overview-rate", "overview"),
     kpiCard("Injection Variants", `${totalVariants}`)
   ].join("");
+  els.templateOverviewKpis.querySelector('[data-template-overview-rate]')?.addEventListener("click", () => openTemplateOverviewRateModal());
 
   const rows = data.templates.filter((t) => {
     const project = getProjectById(t.projectId);
@@ -2453,7 +2457,7 @@ function renderTemplates() {
     .map((t) => {
       const templateRate = getTemplateRateMetrics(t);
       return `
-      <tr>
+      <tr class="clickable-row" data-template-row="${t.id}">
         <td><button class="text-btn" data-template-view="${t.id}" title="View Details">${escapeHtml(t.name)}</button><div class="muted">${escapeHtml(t.description)}</div></td>
         <td>${escapeHtml(getProjectName(t.projectId))}</td>
         <td><span class="chip">${escapeHtml(t.category)}</span></td>
@@ -2497,6 +2501,7 @@ function renderTemplates() {
       openConfirmModal("Delete Template", `Delete template "${t.name}"?`, "✓", () => deleteTemplate(t.id));
     });
   });
+  attachRowOpenHandlers(els.templatesTableBody, "[data-template-row]", (row) => openTemplateDetail(row.dataset.templateRow));
 }
 
 function openTemplateDetail(templateId, options = {}) {
@@ -2877,9 +2882,10 @@ function renderReports() {
     els.reportOverviewKpis.innerHTML = [
       kpiCard("Assessment Reports", `${totalReports}`),
       kpiCard("Critical Findings", `${totalCritical}`),
-      kpiCard("Avg Exploit Success", `${avgExploit}%`),
+      interactiveKpiCard("Avg Exploit Success", `${avgExploit}%`, "View calculation", "report-overview-rate", "overview"),
       kpiCard("Projects At Risk", `${unresolvedProjects.size}`)
     ].join("");
+    els.reportOverviewKpis.querySelector('[data-report-overview-rate]')?.addEventListener("click", () => openReportOverviewRateModal());
   }
 
   if (!els.reportsByProject) return;
@@ -2910,7 +2916,6 @@ function renderReports() {
             <p class="muted">${group.reports.length} report(s) available for this project.</p>
           </div>
           <div class="action-row">
-            <button class="icon-action icon-action--subtle action-btn-text" type="button" data-report-open-project="${group.project.id}">Open Project</button>
             <button class="icon-action icon-action--primary action-btn-text" type="button" data-generate-project-report="${group.project.id}">Generate Project Report</button>
           </div>
         </div>
@@ -2920,7 +2925,7 @@ function renderReports() {
             <div class="project-report-stack">
               ${group.reports.length
                 ? group.reports.map((report) => renderReportLibraryItem(report)).join("")
-                : `<div class="empty-state"><h4>No reports generated yet</h4><p class="muted">Use the actions on the right to create a project-wide, LLM-specific, or attack-specific report.</p></div>`}
+                : `<div class="empty-state"><h4>No reports generated yet</h4><p class="muted">Use the actions on the right to create a project-wide or LLM-specific report.</p></div>`}
             </div>
           </section>
           <section class="section-stack">
@@ -2940,12 +2945,6 @@ function renderReports() {
                 </div>
               `
               : `<p class="muted">No LLM targets are linked to this project yet.</p>`}
-            <h4 class="attack-subhead">Generate Attack Report</h4>
-            <div class="project-report-actions">
-              ${group.attacks.length
-                ? group.attacks.map((attack) => `<button class="chip chip--action" type="button" data-generate-attack-report="${attack.id}">${escapeHtml(attack.name)}</button>`).join("")
-                : `<p class="muted">No attacks in this project yet.</p>`}
-            </div>
           </section>
         </div>
       </article>
@@ -2975,27 +2974,18 @@ function renderReports() {
       if (project && target) generateNewReportForLLM(project, target);
     });
   });
-  els.reportsByProject.querySelectorAll("[data-generate-attack-report]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const attack = data.attacks.find((item) => item.id === btn.dataset.generateAttackReport);
-      if (attack) generateNewReportForAttack(attack);
-    });
-  });
-  els.reportsByProject.querySelectorAll("[data-report-open-project]").forEach((btn) => {
-    btn.addEventListener("click", () => openProjectDetail(btn.dataset.reportOpenProject, "details"));
-  });
+  attachRowOpenHandlers(els.reportsByProject, "[data-report-row]", (row) => openReportDetail(row.dataset.reportRow));
 }
 
 function renderReportLibraryItem(report) {
   return `
-    <article class="report-list-item">
+    <article class="report-list-item clickable-card" data-report-row="${report.id}">
       <div>
         <strong>${escapeHtml(report.title)}</strong>
         <div class="muted">${escapeHtml(getScopedReportLabel(report))}</div>
         <div class="muted">${escapeHtml(formatDateTime(report.generatedAt))} • ${escapeHtml(report.classification)}</div>
       </div>
       <div class="action-row">
-        ${iconAction("👁", "View Details", "report-view", report.id)}
         ${iconAction("⤴", "Export Report", "report-export", report.id)}
         ${iconAction("🗑", "Delete Report", "report-delete", report.id, "icon-action--danger")}
       </div>
@@ -4376,6 +4366,96 @@ function openInfoModal(title, content, width = false) {
   document.getElementById("closeInfoModalBtn")?.addEventListener("click", closeFormModal);
 }
 
+
+function progressTone(percent) {
+  const value = Number(percent || 0);
+  if (value >= 75) return "high";
+  if (value >= 40) return "medium";
+  return "low";
+}
+
+function progressFillMarkup(percent) {
+  const value = Math.max(0, Math.min(100, Number(percent || 0)));
+  return `<span class="progress-track"><span class="progress-fill progress-fill--${progressTone(value)}" style="width:${value}%"></span></span>`;
+}
+
+function attachRowOpenHandlers(root, selector, callback) {
+  root.querySelectorAll(selector).forEach((row) => {
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("button, input, select, textarea, a, label")) return;
+      callback(row);
+    });
+  });
+}
+
+function openAttackOverviewRateModal() {
+  const attacks = data.attacks.filter((attack) => Number(attack.totalCount || 0) > 0);
+  const totalSuccess = attacks.reduce((sum, attack) => sum + Number(attack.successCount || 0), 0);
+  const totalEvaluated = attacks.reduce((sum, attack) => sum + Number(attack.totalCount || 0), 0);
+  const rate = totalEvaluated ? Math.round((totalSuccess / totalEvaluated) * 100) : 0;
+  openSuccessRateExplanationModal({
+    title: "Average Exploit Rate",
+    subject: "Attack Portfolio Average",
+    summary: [
+      { label: "Average Rate", value: `${rate}%` },
+      { label: "Successful Findings", value: String(totalSuccess) },
+      { label: "Evaluated Prompts", value: String(totalEvaluated) },
+      { label: "Calculation", value: `${totalSuccess} ÷ ${totalEvaluated || 1} × 100 = ${rate}%` }
+    ],
+    sections: [
+      {
+        title: "Attack Inputs",
+        items: attacks.map((attack) => `${attack.name}: ${Number(attack.successCount || 0)} ÷ ${Number(attack.totalCount || 0)} = ${Number(attack.exploitRate || 0)}%`),
+        emptyMessage: "No evaluated attacks yet."
+      }
+    ]
+  });
+}
+
+function openTemplateOverviewRateModal() {
+  const templates = data.templates;
+  const average = templates.length ? Math.round(templates.reduce((sum, template) => sum + getTemplateRateMetrics(template).rate, 0) / templates.length) : 0;
+  openSuccessRateExplanationModal({
+    title: "Average Template Exploit Rate",
+    subject: "Template Library Average",
+    summary: [
+      { label: "Average Rate", value: `${average}%` },
+      { label: "Template Count", value: String(templates.length) },
+      { label: "Calculation", value: templates.length ? `${templates.map((template) => getTemplateRateMetrics(template).rate).join(" + ")} ÷ ${templates.length} = ${average}%` : "0 ÷ 0 = 0%" }
+    ],
+    sections: [
+      {
+        title: "Template Inputs",
+        items: templates.map((template) => `${template.name}: ${getTemplateRateMetrics(template).rate}%`),
+        emptyMessage: "No templates available."
+      }
+    ]
+  });
+}
+
+function openReportOverviewRateModal() {
+  const reports = data.reports;
+  const total = reports.length;
+  const totalRate = reports.reduce((sum, report) => sum + Number(report.metrics?.exploitRate || 0), 0);
+  const average = total ? Math.round(totalRate / total) : 0;
+  openSuccessRateExplanationModal({
+    title: "Average Report Exploit Success",
+    subject: "Report Library Average",
+    summary: [
+      { label: "Average Rate", value: `${average}%` },
+      { label: "Report Count", value: String(total) },
+      { label: "Calculation", value: total ? `${totalRate} ÷ ${total} = ${average}%` : "0 ÷ 0 = 0%" }
+    ],
+    sections: [
+      {
+        title: "Report Inputs",
+        items: reports.map((report) => `${report.title}: ${Number(report.metrics?.exploitRate || 0)}%`),
+        emptyMessage: "No reports available."
+      }
+    ]
+  });
+}
+
 function openProjectProgressSpecModal(projectId) {
   const project = getProjectById(projectId);
   if (!project) return;
@@ -4799,7 +4879,7 @@ function renderProjectReportsPanel(project, linkedAttacks = []) {
   const reportMarkup = reports.length
     ? reports
         .map((report) => `
-          <article class="report-list-item">
+          <article class="report-list-item clickable-card" data-report-row="${report.id}">
             <div>
               <strong>${escapeHtml(report.title)}</strong>
               <div class="muted">${escapeHtml(getScopedReportLabel(report))}</div>
@@ -7099,4 +7179,3 @@ function runWelcomeScreenIntro() {
 }
 
 init();
-
