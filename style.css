@@ -46,12 +46,12 @@
 
 body.dark-mode {
   --bg0: #15171b;
-  --chart-success: #22c55e;
-  --chart-warning: #fbbf24;
-  --chart-critical: #f87171;
+  --chart-success: #4ade80;
+  --chart-warning: #facc15;
+  --chart-critical: #fb7185;
   --chart-high: #fb923c;
-  --chart-info: #60a5fa;
-  --chart-neutral: #94a3b8;
+  --chart-info: #38bdf8;
+  --chart-neutral: #cbd5e1;
   --chart-track: rgba(148, 163, 184, 0.18);
   --chart-grid: rgba(148, 163, 184, 0.24);
   --chart-area: rgba(96, 165, 250, 0.16);
@@ -1794,11 +1794,11 @@ body.dark-mode .detail-tab.is-active {
 }
 
 .modal-card--wide {
-  width: min(1120px, calc(100vw - 24px));
+  width: min(1240px, calc(100vw - 24px));
 }
 
 .modal-card--xwide {
-  width: min(1320px, calc(100vw - 24px));
+  width: min(1440px, calc(100vw - 24px));
 }
 
 .modal-columns {
@@ -2978,7 +2978,7 @@ body.dark-mode .report-findings tr.finding-row--focus {
 }
 
 .modal-card {
-  width: min(760px, calc(100vw - 24px));
+  width: min(940px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
   max-height: calc(100dvh - 24px);
   display: flex;
@@ -3403,4 +3403,192 @@ body.dark-mode #reportsView .table-panel {
 .clickable-card:hover {
   border-color: color-mix(in srgb, var(--primary) 35%, var(--line));
   box-shadow: var(--shadow-soft);
+}
+
+
+.topbar-left > #globalSearch[hidden] {
+  display: none !important;
+}
+
+#projectNotesPanel,
+#projectNotesTabBtn {
+  display: none !important;
+}
+
+
+.chip--reachable,
+.pill--reachable,
+.severity--reachable {
+  color: #166534 !important;
+  background: rgba(34, 197, 94, 0.16) !important;
+  border-color: rgba(34, 197, 94, 0.34) !important;
+}
+
+.chip--unreachable,
+.pill--unreachable,
+.severity--unreachable {
+  color: #475569 !important;
+  background: rgba(148, 163, 184, 0.18) !important;
+  border-color: rgba(148, 163, 184, 0.34) !important;
+}
+
+.chip--pending,
+.pill--pending,
+.severity--pending {
+  color: #b45309 !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.32) !important;
+}
+
+
+.attack-pane--workspace {
+  position: relative;
+}
+
+#attackWorkspacePromptForm {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding-bottom: 10px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface) 78%, transparent));
+}
+
+.attack-pane--results .attack-stream-list {
+  background: #0f172a;
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.attack-pane--results .attack-stream-card {
+  background: #111827;
+  border: 1px solid rgba(51, 65, 85, 0.72);
+  color: #e5e7eb;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.attack-pane--results .attack-stream-card__timestamp,
+.attack-pane--results .attack-subhead,
+.attack-pane--results .muted {
+  color: #94a3b8;
+}
+
+.attack-pane--results .attack-stream-card--success,
+.attack-pane--results .attack-stream-card--response {
+  border-left: 4px solid #22c55e;
+}
+
+.attack-pane--results .attack-stream-card--warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.attack-pane--results .attack-stream-card--error,
+.attack-pane--results .attack-stream-card--failed {
+  border-left: 4px solid #ef4444;
+}
+
+.attack-pane--results .attack-stream-card--prompt {
+  border-left: 4px solid #38bdf8;
+}
+
+.attack-pane--results .attack-stream-response {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(100, 116, 139, 0.4);
+}
+
+
+.report-model-sections {
+  gap: 18px;
+}
+
+.model-assessment-section {
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--line));
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+}
+
+.model-assessment-header {
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+}
+
+
+.formula-block,
+.calculation-block {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  padding: 10px 12px;
+  font-family: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.chart-value-label,
+.trend-value-label,
+.bar-value-label {
+  font-size: 11px;
+  font-weight: 800;
+  fill: var(--text);
+}
+
+
+.note-item--target,
+.template-note--target {
+  outline: 2px solid rgba(216, 166, 90, 0.7);
+  box-shadow: 0 0 0 6px rgba(216, 166, 90, 0.16);
+}
+
+.note-reply-block {
+  margin-top: 8px;
+  padding-left: 14px;
+  border-left: 2px solid color-mix(in srgb, var(--primary) 48%, transparent);
+}
+
+.note-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.note-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(216, 166, 90, 0.16);
+  border: 1px solid rgba(216, 166, 90, 0.34);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+
+.chip,
+.pill,
+.severity,
+.success-rate,
+.report-rate-pill {
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+}
+
+td,
+th {
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+#targetsView td:nth-child(3),
+#targetsView td:nth-child(4),
+#attacksView td:nth-child(6),
+#attacksView td:nth-child(8),
+#templatesView td:nth-child(6) {
+  white-space: nowrap;
 }
