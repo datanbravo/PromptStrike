@@ -36,10 +36,7 @@
     <main class="main-shell">
       <header class="topbar">
         <div class="topbar-left">
-          <div class="search-wrap global-search">
-            <span aria-hidden="true">⌕</span>
-            <input id="globalSearch" type="search" placeholder="Search current section" />
-          </div>
+          <input id="globalSearch" type="search" hidden aria-hidden="true" tabindex="-1" />
         </div>
         <div class="topbar-actions">
           <div class="notif-wrap" id="notifWrap">
@@ -116,7 +113,7 @@
           <div class="detail-tab-strip" id="projectDetailTabs" role="tablist" aria-label="Project detail sections">
             <button class="detail-tab is-active" id="projectDetailsTabBtn" type="button" role="tab" aria-selected="true" aria-controls="projectDetailsPanel" data-project-tab="details">Details</button>
             <button class="detail-tab" id="projectTemplatesTabBtn" type="button" role="tab" aria-selected="false" aria-controls="projectTemplatesPanel" data-project-tab="templates">Templates</button>
-            <button class="detail-tab" id="projectNotesTabBtn" type="button" role="tab" aria-selected="false" aria-controls="projectNotesPanel" data-project-tab="notes">Notes</button>
+            <button class="detail-tab" id="projectNotesTabBtn" type="button" role="tab" aria-selected="false" aria-controls="projectNotesPanel" data-project-tab="notes" hidden tabindex="-1">Notes</button>
           </div>
 
           <section class="project-tab-panel" id="projectDetailsPanel" role="tabpanel" aria-labelledby="projectDetailsTabBtn" data-project-panel="details">
@@ -151,12 +148,21 @@
                 <div id="projectDetailAttacks"></div>
               </article>
               <article class="panel sub-panel">
-                <div class="panel-heading panel-heading--between">
+                <div class="panel-heading">
                   <div>
                     <h3>Project Reports</h3>
-                    <p class="muted">Generate project-wide or attack-specific reports from this assessment.</p>
+                    <p class="muted">Generate project-wide or LLM-specific reports in the context of this assessment.</p>
                   </div>
+                </div>
+                <div class="project-report-controls">
                   <button class="icon-action icon-action--primary action-btn-text" id="projectGenerateReportBtn" type="button" title="Generate Project Report" aria-label="Generate Project Report">Generate Project Report</button>
+                  <div class="project-report-llm-picker">
+                    <label for="projectReportTargetSelect">Select LLM to Make Report</label>
+                    <select id="projectReportTargetSelect" aria-label="Select LLM to Make Report">
+                      <option value="">Select linked LLM...</option>
+                    </select>
+                    <button class="icon-action icon-action--primary action-btn-text" id="projectGenerateLLMReportBtn" type="button" title="Generate LLM Report" aria-label="Generate LLM Report">Generate LLM Report</button>
+                  </div>
                 </div>
                 <div id="projectDetailReports" class="project-report-list"></div>
               </article>
@@ -177,28 +183,25 @@
           </section>
 
           <section class="project-tab-panel" id="projectNotesPanel" role="tabpanel" aria-labelledby="projectNotesTabBtn" data-project-panel="notes" hidden>
-            <div class="two-col project-notes-layout">
+            <div class="two-col project-notes-layout" hidden aria-hidden="true">
               <article class="panel sub-panel">
                 <div class="panel-heading">
                   <div>
                     <h3>Project Notes</h3>
-                    <p class="muted">Capture general assessment notes separately from template annotations.</p>
+                    <p class="muted">Project notes have been retired from this workflow.</p>
                   </div>
                 </div>
                 <form id="projectNoteForm" class="inline-form">
                   <label for="projectNoteInput">Add Project Note</label>
-                  <textarea id="projectNoteInput" required placeholder="Add a project note with at least ten words for analyst context"></textarea>
+                  <textarea id="projectNoteInput" required placeholder="Project notes disabled"></textarea>
                   <p id="projectNoteMessage" class="field-message" aria-live="polite"></p>
-                  <div class="action-row">
-                    <button class="icon-action icon-action--primary" type="submit" title="Add Project Note" aria-label="Add Project Note">＋</button>
-                  </div>
                 </form>
               </article>
               <article class="panel sub-panel">
                 <div class="panel-heading">
                   <div>
                     <h3>Recent Notes</h3>
-                    <p class="muted">Analyst notes include author attribution and timestamps.</p>
+                    <p class="muted">Project notes disabled.</p>
                   </div>
                 </div>
                 <div id="projectNotes" class="notes-list"></div>
@@ -214,6 +217,7 @@
               <p>Endpoint status and access.</p>
             </div>
             <div class="action-row">
+              <button class="icon-action icon-action--subtle action-btn-text" id="importTargetsCsvBtn" title="Import Targets CSV" aria-label="Import Targets CSV">Import CSV</button>
               <button class="icon-action icon-action--primary" id="createTargetBtn" title="Add Target" aria-label="Add Target">＋</button>
             </div>
           </div>
@@ -274,7 +278,7 @@
               <p>Run status and control.</p>
             </div>
             <div class="action-row">
-              <button class="icon-action icon-action--subtle" id="toggleAllAttacksBtn" title="Pause All" aria-label="Pause All">⏸</button>
+              <button class="icon-action icon-action--subtle" id="toggleAllAttacksBtn" title="Stop All" aria-label="Stop All">⏹</button>
               <button class="icon-action icon-action--primary" id="createAttackBtn" title="Launch Attack" aria-label="Launch Attack">＋</button>
             </div>
           </div>
@@ -289,7 +293,7 @@
                 <select id="attackStateFilter">
                   <option value="all">All Status</option>
                   <option value="running">Running</option>
-                  <option value="paused">Paused</option>
+                  <option value="paused">Stopped</option>
                   <option value="queued">Queued</option>
                   <option value="completed">Completed</option>
                   <option value="interrupted">Interrupted</option>
@@ -495,7 +499,7 @@
           <div class="page-header">
             <div>
               <h1>Reports</h1>
-              <p>Project-scoped report library and attack-specific reporting.</p>
+              <p>Project-scoped report library and LLM-specific reporting.</p>
             </div>
           </div>
           <div class="kpi-grid" id="reportOverviewKpis"></div>
