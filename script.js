@@ -98,6 +98,7 @@ const els = {
 
   targetStatusOverview: document.getElementById("targetStatusOverview"),
   targetSearch: document.getElementById("targetSearch"),
+  importTargetsCsvBtn: document.getElementById("importTargetsCsvBtn"),
   targetReachabilityFilter: document.getElementById("targetReachabilityFilter"),
   targetsTableBody: document.getElementById("targetsTableBody"),
   createTargetBtn: document.getElementById("createTargetBtn"),
@@ -803,7 +804,7 @@ function seedData() {
 
 function bindEvents() {
   els.navButtons.forEach((btn) => btn.addEventListener("click", () => openSection(btn.dataset.nav)));
-  els.globalSearch.addEventListener("input", () => {
+  els.globalSearch?.addEventListener("input", () => {
     appState.globalSearch = els.globalSearch.value.trim().toLowerCase();
     saveToLocalStorage();
     renderActiveListView();
@@ -864,15 +865,23 @@ function bindEvents() {
       if (project) generateNewReportForProject(project);
     });
   }
+  if (els.projectGenerateLLMReportBtn) {
+    els.projectGenerateLLMReportBtn.addEventListener("click", () => {
+      const project = getSelectedProject();
+      const target = data.targets.find((item) => item.id === String(els.projectReportTargetSelect?.value || ""));
+      if (project && target) generateNewReportForLLM(project, target);
+    });
+  }
   if (els.projectNoteForm) {
     els.projectNoteForm.addEventListener("submit", handleAddProjectNote);
   }
 
-  els.targetSearch.addEventListener("input", () => {
+  els.targetSearch?.addEventListener("input", () => {
     appState.targetSearch = els.targetSearch.value.trim().toLowerCase();
     saveToLocalStorage();
     renderTargets();
   });
+  els.importTargetsCsvBtn?.addEventListener("click", openTargetCsvImportModal);
   if (els.targetReachabilityFilter) {
     els.targetReachabilityFilter.addEventListener("change", () => {
       appState.targetReachabilityFilter = els.targetReachabilityFilter.value;
@@ -1110,7 +1119,17 @@ function renderNotifications() {
       if (note.targetType === "attack" && note.targetId) openAttackDetail(note.targetId);
       if (note.targetType === "target" && note.targetId) openTargetDetail(note.targetId);
       if (note.targetType === "project" && note.targetId) openProjectDetail(note.targetId);
-      if (note.targetType === "template" && note.targetId) openTemplateDetail(note.targetId);
+      if (note.targetType === "template" && note.targetId) {
+        openTemplateDetail(note.targetId);
+        window.setTimeout(() => {
+          if (note.noteId) {
+            const el = document.getElementById(`template-note-${note.noteId}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            el?.classList.add("template-note--target");
+            window.setTimeout(() => el?.classList.remove("template-note--target"), 2200);
+          }
+        }, 80);
+      }
       if (note.targetType === "report" && note.targetId) openReportDetail(note.targetId);
       els.notificationDropdown.hidden = true;
       renderNotifications();
@@ -1129,7 +1148,7 @@ function renderNotifications() {
   });
 }
 
-function pushNotification(message, section, targetType = null, targetId = null) {
+function pushNotification(message, section, targetType = null, targetId = null, noteId = "") {
   const isTemplateNoteNotificationEvent = section === "templates" &&
     targetType === "template" &&
     /^new note:/i.test(String(message || "").trim());
@@ -1142,7 +1161,8 @@ function pushNotification(message, section, targetType = null, targetId = null) 
     read: false,
     section,
     targetType,
-    targetId
+    targetId,
+    noteId
   }));
   renderNotifications();
   saveToLocalStorage();
@@ -1284,6 +1304,8 @@ function renderProjectDetail() {
     els.projectDetailOverview.innerHTML = [
       detailDefinition("Assessment Type", p.type || "Assessment"),
       detailDefinition("Analyst", `${p.analyst || "NA"}${p.analystName ? ` • ${p.analystName}` : ""}`),
+      detailDefinition("Start Date", formatDate(p.startDate)),
+      detailDefinition("End Date", formatDate(p.endDate)),
       detailDefinition("Uploaded", formatDate(p.uploadDate)),
       detailDefinition("State", systemState),
       detailDefinition("Linked Targets", String(linkedTargets.length)),
@@ -1294,10 +1316,9 @@ function renderProjectDetail() {
   if (els.projectDetailConfig) {
     els.projectDetailConfig.innerHTML = `
       <span class="config-pill">Assessment Type <strong>${escapeHtml(p.type || "Assessment")}</strong></span>
-      <span class="config-pill">State Source <strong>System-managed</strong></span>
       <span class="config-pill">Templates <strong>${projectTemplates.length}</strong></span>
-      <span class="config-pill">Reports <strong>${projectReports.length}</strong></span>
-      <span class="config-pill">Notes <strong>${(p.notes || []).length}</strong></span>
+      <span class="config-pill">Linked LLMs <strong>${linkedTargets.length}</strong></span>
+      <span class="config-pill">Linked Attacks <strong>${linkedAttacks.length}</strong></span>
     `;
   }
 
@@ -1308,6 +1329,11 @@ function renderProjectDetail() {
         )
         .join("")
     : `<p class="muted">No linked targets.</p>`;
+
+  if (els.projectReportTargetSelect) {
+    const options = linkedTargets.length ? linkedTargets.map((target) => `<option value="${target.id}">${escapeHtml(target.name)}</option>`).join("") : `<option value="">No linked LLMs</option>`;
+    els.projectReportTargetSelect.innerHTML = options;
+  }
 
   els.projectDetailAttacks.innerHTML = linkedAttacks.length
     ? linkedAttacks
@@ -1405,14 +1431,11 @@ function openProjectEditor(project = null) {
   els.formModalForm.innerHTML = `
     <div class="field"><label>Project Name <span class="required">*</span></label><input name="name" required value="${isEdit ? escapeHtml(project.name) : ""}" /></div>
     <div class="field"><label>Description <span class="optional">(optional)</span></label><textarea name="description">${isEdit ? escapeHtml(project.description) : ""}</textarea></div>
-    <div class="field"><label>Assessment Type <span class="required">*</span></label><select name="type" required>${["CVI", "CVPA"].map((type) => `<option value="${type}" ${isEdit ? project.type === type ? "selected" : "" : type === "Enterprise" ? "selected" : ""}>${type}</option>`).join("")}</select></div>
+    <div class="field"><label>Assessment Type <span class="required">*</span></label><select name="type" required>${["CVI", "CVPA"].map((type) => `<option value="${type}" ${isEdit ? project.type === type ? "selected" : "" : type === "CVI" ? "selected" : ""}>${type}</option>`).join("")}</select></div>
+    <div class="field"><label>Start Date <span class="required">*</span></label><input type="date" name="startDate" required value="${isEdit ? escapeHtml(project.startDate || "") : todayISO()}" /></div>
+    <div class="field"><label>End Date <span class="required">*</span></label><input type="date" name="endDate" required value="${isEdit ? escapeHtml(project.endDate || "") : todayISO()}" /></div>
     <div class="field"><label>Analyst Initials <span class="required">*</span></label><input name="analyst" required maxlength="4" value="${isEdit ? escapeHtml(project.analyst) : ""}" /></div>
     <div class="field"><label>Analyst Name <span class="optional">(optional)</span></label><input name="analystName" value="${isEdit ? escapeHtml(project.analystName) : ""}" /></div>
-    <div class="chip-row">
-      <span class="chip">Assessment State: System-managed</span>
-      <span class="chip">Progress: System-managed</span>
-    </div>
-    <p class="helper-text">Assessment state and progress remain system-managed in this prototype.</p>
     <div class="action-row">
       <button type="button" class="icon-action icon-action--subtle" id="cancelFormBtn" title="Cancel" aria-label="Cancel">×</button>
       <button type="submit" class="icon-action icon-action--primary" title="${isEdit ? "Update Project" : "Create Project"}" aria-label="${isEdit ? "Update Project" : "Create Project"}">✓</button>
@@ -1426,15 +1449,15 @@ function openProjectEditor(project = null) {
     const payload = {
       name: String(fd.get("name")).trim(),
       description: String(fd.get("description")).trim(),
-      type: String(fd.get("type")).trim() || "Enterprise",
+      type: String(fd.get("type")).trim() || "CVI",
+      startDate: String(fd.get("startDate")).trim() || todayISO(),
+      endDate: String(fd.get("endDate")).trim() || todayISO(),
       analyst: String(fd.get("analyst")).trim().toUpperCase(),
       analystName: String(fd.get("analystName")).trim() || "Analyst"
     };
     if (!payload.name || !payload.type || !payload.analyst) return;
     if (isEdit) {
-      Object.assign(project, payload, {
-        state: getProjectSystemState(project)
-      });
+      Object.assign(project, payload, { state: getProjectSystemState(project) });
       pushNotification(`Project updated: ${project.name}`, "projects", "project", project.id);
     } else {
       const created = normalizeProject({ id: mkId(), ...payload, state: "Active", progress: 0, uploadDate: todayISO(), notes: [] });
@@ -1529,9 +1552,9 @@ function renderTargets() {
     <tr class="clickable-row" data-target-row="${t.id}">
       <td><button class="text-btn" data-target-view="${t.id}" title="View Details">${escapeHtml(t.name)}</button><div class="muted mono">${escapeHtml(compactEndpoint(t.endpoint))}</div></td>
       <td>${escapeHtml(compactProviderModelLabel(t))}</td>
-      <td><span class="chip">${escapeHtml(t.reachability)}</span></td>
+      <td><span class="chip chip--${slugify(t.reachability)}">${escapeHtml(t.reachability)}</span></td>
       <td><span class="chip">${escapeHtml(t.auth || "Optional")}</span></td>
-      <td>${formatDate(t.lastVerified)}</td>
+      <td>${formatDateTime(t.lastVerified)}</td>
       <td>${t.projectIds.length}</td>
       <td><div class="action-row">${iconAction("▶", "Run Attack", "target-run", t.id)}${iconAction("✎", "Edit", "target-edit", t.id)}${iconAction("🗑", "Delete", "target-delete", t.id, "icon-action--danger")}</div></td>
     </tr>
@@ -1597,6 +1620,67 @@ function renderTargetDetail() {
   ].join("");
 }
 
+function openTargetCsvImportModal() {
+  els.formModalTitle.textContent = "Import Targets CSV";
+  els.formModalForm.innerHTML = `
+    <div class="field"><label>CSV File <span class="required">*</span></label><input type="file" name="csvFile" accept=".csv,text/csv" required /></div>
+    <p class="helper-text">Expected columns: name, endpoint, provider, model, auth, projectId or projectName.</p>
+    <div class="action-row">
+      <button type="button" class="icon-action icon-action--subtle" id="cancelFormBtn" title="Cancel" aria-label="Cancel">×</button>
+      <button type="submit" class="icon-action icon-action--primary" title="Import Targets CSV" aria-label="Import Targets CSV">✓</button>
+    </div>
+  `;
+  openFormModal();
+  document.getElementById("cancelFormBtn").addEventListener("click", closeFormModal);
+  els.formModalForm.onsubmit = async (event) => {
+    event.preventDefault();
+    const file = els.formModalForm.querySelector('input[name="csvFile"]').files?.[0];
+    if (!file) return;
+    const raw = await file.text();
+    const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!lines.length) return;
+    const headers = lines.shift().split(",").map((h) => h.trim().toLowerCase());
+    const getIndex = (...names) => names.map((n) => headers.indexOf(n)).find((i) => i >= 0);
+    const idxName = getIndex("name","target");
+    const idxEndpoint = getIndex("endpoint","url");
+    const idxProvider = getIndex("provider");
+    const idxModel = getIndex("model","llm");
+    const idxAuth = getIndex("auth","authentication","authentication type");
+    const idxProjectId = getIndex("projectid","project id");
+    const idxProjectName = getIndex("projectname","project name");
+    let imported = 0;
+    lines.forEach((line) => {
+      const cols = line.split(",").map((v) => v.trim());
+      const endpoint = idxEndpoint >= 0 ? cols[idxEndpoint] : "";
+      const name = idxName >= 0 ? cols[idxName] : endpoint || "Imported Target";
+      if (!endpoint) return;
+      const projectIds = [];
+      const pid = idxProjectId >= 0 ? cols[idxProjectId] : "";
+      const pname = idxProjectName >= 0 ? cols[idxProjectName] : "";
+      if (pid && data.projects.some((p) => p.id === pid)) projectIds.push(pid);
+      if (!projectIds.length && pname) {
+        const project = data.projects.find((p) => p.name.toLowerCase() === pname.toLowerCase());
+        if (project) projectIds.push(project.id);
+      }
+      data.targets.unshift(normalizeTarget({
+        id: mkId(),
+        name,
+        endpoint,
+        provider: idxProvider >= 0 ? cols[idxProvider] : "",
+        model: idxModel >= 0 ? cols[idxModel] : "",
+        auth: idxAuth >= 0 ? cols[idxAuth] : "",
+        reachability: "Pending Connectivity",
+        lastVerified: new Date().toISOString(),
+        projectIds
+      }));
+      imported += 1;
+    });
+    closeFormModal();
+    renderAll();
+    pushNotification(`Imported ${imported} targets`, "targets", "target", "");
+  };
+}
+
 function openTargetEditor(target = null) {
   const isEdit = Boolean(target);
   els.formModalTitle.textContent = isEdit ? "Edit Target" : "Add Target";
@@ -1606,11 +1690,6 @@ function openTargetEditor(target = null) {
     <div class="field"><label>Model <span class="optional">(optional)</span></label><input name="model" value="${isEdit ? escapeHtml(target.model) : ""}" /></div>
     <div class="field"><label>Endpoint <span class="required">*</span></label><input name="endpoint" required value="${isEdit ? escapeHtml(target.endpoint) : ""}" /></div>
     <div class="field"><label>Authentication Type <span class="optional">(optional)</span></label><select name="auth"><option value="">Optional</option>${["API Key", "No Auth", "OAuth"].map((v) => `<option value="${v}" ${isEdit && target.auth === v ? "selected" : ""}>${v}</option>`).join("")}</select></div>
-    <div class="chip-row">
-      <span class="chip">Reachability: System-managed</span>
-      <span class="chip">Connectivity Verification: System-managed</span>
-    </div>
-    <p class="helper-text">Reachability and connectivity verification are system-managed in this prototype.</p>
     <div class="action-row">
       <button type="button" class="icon-action icon-action--subtle" id="cancelFormBtn" title="Cancel" aria-label="Cancel">×</button>
       <button type="submit" class="icon-action icon-action--primary" title="${isEdit ? "Update Target" : "Add Target"}" aria-label="${isEdit ? "Update Target" : "Add Target"}">✓</button>
@@ -2575,6 +2654,9 @@ function renderTemplateDetail() {
   els.templateNotes.querySelectorAll("[data-template-note-delete]").forEach((btn) => {
     btn.addEventListener("click", () => deleteTemplateNote(btn.dataset.templateNoteDelete));
   });
+  els.templateNotes.querySelectorAll("[data-template-note-reply]").forEach((btn) => {
+    btn.addEventListener("click", () => openTemplateNoteReplyEditor(btn.dataset.templateNoteReply));
+  });
   els.templateUsage.querySelector('[data-template-success-rate]')?.addEventListener("click", () => openTemplateSuccessRateModal(t.id));
 }
 
@@ -2788,15 +2870,53 @@ function handleAddTemplateNote(event) {
     setFieldMessage(els.templateNoteMessage, `Please enter at least ${MINIMUM_NOTE_WORDS} words. Currently ${noteValidation.count}.`, "error");
     return;
   }
-  const analystPool = [...new Set(data.projects.map((p) => p.analyst).filter(Boolean))];
-  const author = analystPool.length ? analystPool[Math.floor(Math.random() * analystPool.length)] : "AB";
-  t.notes.unshift({ id: mkId(), text: noteText, author, createdAt: `${todayISO()} ${nowHM()}` });
+  const templateProject = data.projects.find((project) => project.id === t.projectId);
+  const author = templateProject?.analyst || "AB";
+  t.notes.unshift({ id: mkId(), text: noteText, author, createdAt: `${todayISO()} ${nowHM()}`, replyTo: "" });
   els.templateNoteInput.value = "";
   setFieldMessage(els.templateNoteMessage, "");
   renderTemplateDetail();
   renderProjectDetail();
   saveToLocalStorage();
-  pushNotification(`New note: ${author} on ${t.name}`, "templates", "template", t.id);
+  pushNotification(`New note: ${author} on ${t.name}`, "templates", "template", t.id, t.notes[0]?.id || "");
+}
+
+function openTemplateNoteReplyEditor(noteId) {
+  const template = getSelectedTemplate();
+  if (!template) return;
+  const note = template.notes.find((n) => n.id === noteId);
+  if (!note) return;
+  const project = data.projects.find((p) => p.id === template.projectId);
+  const author = project?.analyst || "AB";
+  els.formModalTitle.textContent = "Reply to Template Note";
+  els.formModalForm.innerHTML = `
+    <div class="field">
+      <label>Reply Text <span class="required">*</span></label>
+      <textarea name="replyText" required></textarea>
+    </div>
+    <p id="templateNoteReplyMessage" class="field-message" aria-live="polite"></p>
+    <div class="action-row">
+      <button type="button" class="icon-action icon-action--subtle" id="cancelFormBtn" title="Cancel" aria-label="Cancel">×</button>
+      <button type="submit" class="icon-action icon-action--primary" title="Post Reply" aria-label="Post Reply">✓</button>
+    </div>
+  `;
+  openFormModal();
+  document.getElementById("cancelFormBtn").addEventListener("click", closeFormModal);
+  els.formModalForm.onsubmit = (event) => {
+    event.preventDefault();
+    const replyText = String(new FormData(els.formModalForm).get("replyText")).trim();
+    const validation = validateMinimumWordCount(replyText, MINIMUM_NOTE_WORDS);
+    if (!validation.valid) {
+      setFieldMessage(document.getElementById("templateNoteReplyMessage"), `Please enter at least ${MINIMUM_NOTE_WORDS} words. Currently ${validation.count}.`, "error");
+      return;
+    }
+    const reply = { id: mkId(), text: replyText, author, createdAt: `${todayISO()} ${nowHM()}`, replyTo: note.id };
+    template.notes.unshift(reply);
+    closeFormModal();
+    renderTemplateDetail();
+    saveToLocalStorage();
+    pushNotification(`Reply note: ${author} on ${template.name}`, "templates", "template", template.id, reply.id);
+  };
 }
 
 function openTemplateNoteEditor(noteId) {
@@ -4482,7 +4602,7 @@ function openProjectProgressSpecModal(projectId) {
         <li>Templates and notes increase evidence maturity and workflow completeness.</li>
         <li>The current stored progress remains visible while the system-managed state updates around it.</li>
       </ul>
-      <p class="muted">Current note count used for analyst maturity context: ${notes}.</p>
+      <p class="muted">Calculation: (Targets × 20 + Attacks × 25 + Templates × 15 + Reports × 20 + Stored Progress) ÷ Normalizer = ${project.progress}%</p>
     </article>
   `);
 }
@@ -4947,7 +5067,7 @@ function bindProjectDetailEvents() {
   els.projectDetailAttacks.querySelectorAll("[data-attack-success-rate]").forEach((btn) => {
     btn.addEventListener("click", () => openAttackSuccessRateModal(btn.dataset.attackSuccessRate));
   });
-  [els.projectDetailAttacks, els.projectDetailReports].forEach((container) => {
+  [els.projectDetailAttacks, els.projectDetailReports].filter(Boolean).forEach((container) => {
     container?.querySelectorAll("[data-project-attack-report]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const attack = data.attacks.find((item) => item.id === btn.dataset.projectAttackReport);
@@ -5056,10 +5176,11 @@ function renderNoteList(notes, scope) {
   if (!notes.length) return `<p class="muted">No notes yet.</p>`;
   return notes
     .map((note) => `
-      <article class="info-item">
+      <article class="info-item" id="${scope}-note-${note.id}">
         <div>${escapeHtml(note.text)}</div>
-        <small class="muted">${escapeHtml(note.author)} • ${escapeHtml(note.createdAt)}</small>
+        <small class="muted">${escapeHtml(note.author)} • ${escapeHtml(note.createdAt)}${note.replyTo ? ` • Reply` : ""}</small>
         <div class="action-row">
+          ${scope === "template" ? iconAction("↩", "Reply to Note", `${scope}-note-reply`, note.id) : ""}
           ${iconAction("✎", "Edit Note", `${scope}-note-edit`, note.id)}
           ${iconAction("🗑", "Delete Note", `${scope}-note-delete`, note.id, "icon-action--danger")}
         </div>
@@ -5071,7 +5192,7 @@ function renderNoteList(notes, scope) {
 function handleAddProjectNote(event) {
   event.preventDefault();
   const project = getSelectedProject();
-  if (!project || !els.projectNoteInput) return;
+  if (!project || !els.projectNoteInput || !els.projectNotes) return;
   const noteText = els.projectNoteInput.value.trim();
   const validation = validateMinimumWordCount(noteText, MINIMUM_NOTE_WORDS);
   if (!validation.valid) {
@@ -5544,7 +5665,8 @@ function normalizeNote(note, defaultAuthor = "AB") {
     id: note?.id || mkId(),
     text: String(note?.text || "").trim(),
     author: String(note?.author || defaultAuthor).trim() || defaultAuthor,
-    createdAt: String(note?.createdAt || `${todayISO()} ${nowHM()}`)
+    createdAt: String(note?.createdAt || `${todayISO()} ${nowHM()}`),
+    replyTo: String(note?.replyTo || "").trim()
   };
 }
 
@@ -5566,7 +5688,8 @@ function normalizeNotification(notification = {}) {
     read: Boolean(notification?.read),
     section: "templates",
     targetType: "template",
-    targetId: String(notification?.targetId || "").trim()
+    targetId: String(notification?.targetId || "").trim(),
+    noteId: String(notification?.noteId || "").trim()
   };
 }
 
@@ -5574,8 +5697,10 @@ function normalizeProject(project) {
   return {
     id: project?.id || mkId(),
     name: String(project?.name || "Untitled Project").trim(),
-    type: String(project?.type || "Enterprise").trim() || "Enterprise",
+    type: String(project?.type || "CVI").trim() || "CVI",
     description: String(project?.description || "").trim(),
+    startDate: String(project?.startDate || todayISO()).trim() || todayISO(),
+    endDate: String(project?.endDate || todayISO()).trim() || todayISO(),
     analyst: String(project?.analyst || "AB").trim().toUpperCase() || "AB",
     analystName: String(project?.analystName || "Analyst").trim() || "Analyst",
     state: String(project?.state || "Active").trim() || "Active",
@@ -5595,7 +5720,7 @@ function normalizeTarget(target = {}) {
     auth: String(target.auth || "").trim(),
     reachability: String(target.reachability || "Pending Connectivity").trim(),
     modelDetection: String(target.modelDetection || "Pending").trim(),
-    lastVerified: String(target.lastVerified || todayISO()).trim(),
+    lastVerified: String(target.lastVerified || new Date().toISOString()).trim(),
     lastTested: String(target.lastTested || "Not tested").trim(),
     projectIds: Array.isArray(target.projectIds) ? target.projectIds : []
   };
