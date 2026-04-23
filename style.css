@@ -1306,8 +1306,21 @@ body.dark-mode tbody tr:hover td .pill {
 }
 
 .progress-fill {
+  display: block;
   height: 100%;
   background: linear-gradient(90deg, #7fa0dc, #4d70b8, #38578e);
+}
+
+.progress-fill--low {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.progress-fill--medium {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.progress-fill--high {
+  background: linear-gradient(90deg, #22c55e, #15803d);
 }
 
 .progress-spec-trigger {
@@ -3373,3 +3386,21 @@ body.dark-mode #reportsView .table-panel {
 .chart-bg-critical { background: color-mix(in srgb, var(--chart-critical) 16%, transparent); }
 .chart-bg-info { background: color-mix(in srgb, var(--chart-info) 14%, transparent); }
 .chart-bg-neutral { background: color-mix(in srgb, var(--chart-neutral) 14%, transparent); }
+
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover td {
+  background: rgba(244, 249, 248, 0.98);
+}
+
+.clickable-card {
+  cursor: pointer;
+}
+
+.clickable-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--line));
+  box-shadow: var(--shadow-soft);
+}
